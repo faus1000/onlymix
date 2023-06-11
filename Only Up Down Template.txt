@@ -1,0 +1,21 @@
+  var mticks = [0, 0];
+        var first = 0;
+
+
+mticks[1] = data.tick.quote;
+            mticks[0] = first;
+            first = data.tick.quote;
+
+
+
+if (mticks[0] && mticks[1] != 0) {
+                var change = (Number(mticks[1] - mticks[0])).toFixed(decimals);
+
+                if (change > 0) {
+
+                }else if (change <= 0) {
+
+                }
+                //los ecounters aqui
+
+            }

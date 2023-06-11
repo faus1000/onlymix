@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta
+        name="viewport" content="width=device-width, initial-scale=1.0">
+        <!-- <script src="main.js"></script> -->
+        <title>Only One to One V100</title>
+        <link rel="icon" type="image/x-icon" href="./images/favicon.png">
+        <style>
+        /* width */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        /* Track */
+        ::-webkit-scrollbar-track {
+            box-shadow: transparent;
+            border-radius: 10px;
+        }
+
+        /* Handle */
+        ::-webkit-scrollbar-thumb {
+            background: rgba(131 , 145 , 155, 0.54);
+            border-radius: 10px;
+        }
+
+        /* Handle on hover */
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(131 , 145 , 155, 0.54);
+        }
+        body {
+            /* background-color: #a1d2ff;*/
+            background-color: rgb(11, 5, 22);
+            overflow: hidden;
+        }
+        
+        #container {
+            display: flex;
+            /*  flex-flow: wrap;*/
+            flex-direction: column-reverse;
+            align-items: flex-start;
+            margin-left: 8px;
+        }
+
+        .egroup {
+            width: auto;
+            height: 18px;
+
+            /* background-color: green; */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #ff4800;
+            padding: 0;
+            font-size: 20px;
+            font-family: sans-serif;
+            font-weight: bold;
+            margin: 2px 0;
+        }
+        .etext {
+            color: #ff4800;
+            padding: 0;
+            font-size: 20px;
+            font-family: sans-serif;
+            font-weight: bold;
+        }
+
+        .ogroup {
+            width: auto;
+            height: 18px;
+            margin: 2px 0;
+            /* background-color: red; */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #13b966;
+            padding: 0;
+            font-size: 14px;
+            font-family: sans-serif;
+            font-weight: bold;
+        }
+        .otext {
+            color: #13b966;
+            padding: 0;
+            font-size:14px;
+            font-family: sans-serif;
+            font-weight: bold;
+        }
+    </style>
+
+</head>
+
+<body>
+    <!-- <div class="mainContainer">
+                                                                                                    <div class="linea"></div>
+                                                                                                   
+                                                                                                </div> -->
+    <div id="container"></div>
+
+    <!-- structura interna -->
+    <!-- 
+                                                                        <div class="egroup">
+                                                                            <span class="etext">2e</span>
+                                                                        </div>
+                                                                        <div class="ogroup">
+                                                                            <span class="otext">3o</span>
+                                                                        </div>
+                                                                      -->
+
+    <script>
+
+        var out = document.body;
+        // ==============================================================
+
+        // var arr1 = [];
+        // var arr2 = [];
+        // arr2[0] = 0;
+        // var listC = [];
+
+        var eCounter = 0;
+        var oCounter = 0;
+        var glist = [];
+        var selectList = [];
+
+        var symbol = "R_100";
+        var decimals = 2;
+        var mticks = [0, 0];
+        var first = 0;
+
+
+        var ws = new WebSocket('wss://ws.binaryws.com/websockets/v3?app_id=1089');
+
+        ws.onopen = function (evt) {
+            ws.send(JSON.stringify({ticks: symbol}));
+        };
+
+        var addOGroup = false;
+        var addEGroup = false;
+
+        var ctr = 0;
+        var ctg = false;
+
+        ws.onmessage = function (msg) {
+            var data = JSON.parse(msg.data);
+            mticks[1] = data.tick.quote;
+            mticks[0] = first;
+            first = data.tick.quote;
+            var digit = Number(data.tick.quote).toFixed(decimals).slice(-1);
+
+            if (mticks[0] && mticks[1] != 0) {
+                var change = (Number(mticks[1] - mticks[0])).toFixed(decimals);
+
+                if (change > 0) {
+                    if (oCounter > 0) {
+                        glist.push(1);
+                        addEGroup = true
+                    }
+                    oCounter = 0;
+                    eCounter += 1;
+
+                }else if (change <= 0) {
+                    if (eCounter > 0) {
+                        glist.push(1);
+                        addOGroup = true;
+                    }
+                    eCounter = 0;
+                    oCounter += 1;
+
+                }
+                //los ecounters aqui
+                if (eCounter > 0) {
+
+                    if (addEGroup) {
+                        addEGroup = false;
+                    } else {
+                        glist[glist.length - 1] = eCounter;
+                    }
+                }
+                if (oCounter > 0) {
+    
+                    if (addOGroup) {
+                        addOGroup = false;
+                    } else {
+                        glist[glist.length - 1] = oCounter;
+                    }
+    
+                }
+                var d3 = glist[glist.length - 3];
+                var d2 = glist[glist.length - 2];
+                var d1 = glist[glist.length - 1];
+
+            }
+
+      
+            if (glist.length >= 2) {
+
+                if (d1 == 1) {  
+                    ctr++ 
+                    if (ctr >= 1 && ctg == false) {  
+                        selectList.push(ctr);
+                        addgroup(ctr); 
+
+                        ctg = true 
+
+                    }
+                    if (ctg == true) { 
+                        selectList[selectList.length - 1] = ctr;
+                        // ctg = true
+                        updateGroup(ctr);
+                    }
+
+                } else if (d1 > 1) { // esto es un grupo
+
+                    if (selectList[selectList.length - 1] != "Gs") {
+
+                        selectList.splice(-1, 1);
+                        del();
+                    }
+
+                    ctr--
+                    if (ctr < 1) {} else {
+
+
+                        selectList.push(ctr);
+                        selectList.push("Gs");
+                        addgroup(ctr);
+                        addgroup(0);
+                    } ctg = false
+                    ctr = 0;
+                }
+ 
+            }
+
+            // console.log("ctg:" + ctg);
+            // console.log("ctr:" + ctr);
+            // console.log("%c lista de ejemplo:" + selectList, "color:#3399ff;");
+
+
+            // /////////
+
+
+            function addgroup(value) {
+                var edigitText = document.createTextNode(value);
+                var container = document.getElementById("container");
+
+                if (value >= 1) {
+                    var Group = document.createElement("div");
+                    var Etext = document.createElement("span");
+                    Group.setAttribute('class', 'egroup');
+                    Etext.setAttribute("class", "etext");
+                    Etext.appendChild(edigitText);
+                    Group.appendChild(Etext);
+                    container.appendChild(Group);
+                } else if (value < 1) {
+
+                    var Group = document.createElement("div");
+                    var otext = document.createElement("span");
+                    Group.setAttribute('class', 'ogroup');
+                    otext.setAttribute("class", "otext");
+                    otext.appendChild(document.createTextNode("Gs"));
+                    Group.appendChild(otext);
+                    container.appendChild(Group);
+                }
+
+
+            }
+            function updateGroup(value) {
+                var counterItem = document.getElementsByClassName("egroup");
+                counterItem[counterItem.length - 1].innerHTML = value;
+
+            }
+
+            function del() {
+                var counterItem = document.getElementsByClassName("egroup");
+                counterItem[counterItem.length - 1].remove();
+            }
+
+
+            // console.log("select List:" + selectList);
+
+
+        }
+    </script>
+</body></html>
